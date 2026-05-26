@@ -1,0 +1,43 @@
+{
+  "options": {
+    "updateExistingRecords": "true",
+    "insertBaseTables": "true",
+    "forceLookupTableUpdate": "true",
+    "disableSegUpdate": "false",
+    "autoCreatePortalUser": "true",
+    "mergeRecordsWithMatchingSsn": "false",
+    "dateFormat": "dd.mm.yyyy"
+  },
+  "records": [
+    {
+      "EmployeeNumber": 123456,
+      "SSNValue": "00000000",
+      "FirstName": "Max",
+      "LastName": "Mustermann",
+      "DateOfBirth": "01.01.1980",
+      "HomeStreet1": "Musterstraße 1",
+      "HomeCity": "Musterstadt",
+      "HomeZip": "12345",
+      "HomeCountry": "Germany",
+      "Organization.Code": "O1",
+      "Department.Code": "D1",
+      "Supervisor": "654321",
+      "Email": "max.mustermann@example.com"
+    },
+    {
+      "EmployeeNumber": 789101,
+      "SSNValue": "00000000",
+      "FirstName": "Jane",
+      "LastName": "Doe",
+      "DateOfBirth": "07.05.1990",
+      "HomeStreet1": "Avenue 2",
+      "HomeCity": "Greentown",
+      "HomeZip": "12345",
+      "HomeCountry": "Austria",
+      "Organization.Code": "O1",
+      "Department.Code": "D1",
+      "Supervisor": "654321",
+      "Email": "jane.doe@example.com"
+    }
+  ]
+}
