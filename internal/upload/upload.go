@@ -40,17 +40,12 @@ func (c *Client) Upload(recordsJSON []byte, uploadURL string, opts *model.Upload
 		return nil, fmt.Errorf("upload: upload URL is empty")
 	}
 
-	var records []interface{}
-	if err := json.Unmarshal(recordsJSON, &records); err != nil {
-		return nil, fmt.Errorf("upload: failed to parse records JSON: %w", err)
-	}
-
 	options := model.DefaultUploadOptions()
 	if opts != nil {
 		options = *opts
 	}
 
-	envelope := model.UploadEnvelope{Options: options, Records: records}
+	envelope := model.UploadEnvelope{Options: options, Records: json.RawMessage(recordsJSON)}
 	payload, err := json.Marshal(envelope)
 	if err != nil {
 		return nil, fmt.Errorf("upload: failed to marshal envelope: %w", err)
@@ -87,13 +82,9 @@ func (c *Client) Upload(recordsJSON []byte, uploadURL string, opts *model.Upload
 }
 
 func BuildEnvelopeJSON(recordsJSON []byte, opts *model.UploadOptions) ([]byte, error) {
-	var records []interface{}
-	if err := json.Unmarshal(recordsJSON, &records); err != nil {
-		return nil, fmt.Errorf("upload: failed to parse records: %w", err)
-	}
 	options := model.DefaultUploadOptions()
 	if opts != nil {
 		options = *opts
 	}
-	return json.Marshal(model.UploadEnvelope{Options: options, Records: records})
+	return json.Marshal(model.UploadEnvelope{Options: options, Records: json.RawMessage(recordsJSON)})
 }

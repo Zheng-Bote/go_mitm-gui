@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0] - 2026-05-27
+
+### Added
+- **Kafka Debug Mode:** Optional export of loaded Kafka records to `<yyyy-mm-dd>_json-upload.json` (enabled via `kafka_debug_mode=true` in INI).
+- **Dynamic Kafka GroupID:** Automatic appending of OS username and timestamp to `GROUP_ID` if it starts with `bmw.cority.connect.`.
+- **Proxy Auto-Detection:** Settings tab now automatically detects `proxy_<user>.enc` in the INI directory and prompts for password.
+- **Background Processing:** Data loading and validation now run in separate goroutines to prevent GUI freezes.
+
+### Optimized
+- **Parallel Validation:** JSON Schema validation now uses multiple CPU cores for significant speedups on large datasets.
+- **Memory Efficiency:** Upload pipeline refactored to use `json.RawMessage`, drastically reducing memory usage and allocations for large payloads.
+- **GUI Stability:** Implementation of log truncation (last 100 entries) in the summary panel to maintain responsiveness with massive error lists.
+
+### Fixed
+- **Kafka Timeout Detection:** Improved robust detection of wrapped `context.DeadlineExceeded` errors using `errors.Is`.
+- Corrected misplaced imports in `internal/model/types.go`.
+- Fixed undefined icon error in `gui/settings.go` by switching to `theme.FolderOpenIcon`.
+
 ## [0.1.0] - 2026-05-26
 
 ### Added

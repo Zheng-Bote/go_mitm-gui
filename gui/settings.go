@@ -1,15 +1,20 @@
 package gui
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/zheng-bote/go_mitm-gui/internal/config"
+	"github.com/zheng-bote/go_mitm-gui/internal/crypto"
 	"github.com/zheng-bote/go_mitm-gui/internal/model"
 )
 
@@ -33,7 +38,10 @@ type SettingsTab struct {
 
 	loadBtn    *widget.Button
 	selectBtn  *widget.Button
+	loadProxyBtn *widget.Button
 	saveProxyBtn *widget.Button
+
+	proxyFileFoundLabel *widget.Label
 }
 
 func NewSettingsTab(parent fyne.Window, onLoaded onConfigLoaded, onProxySave func(*model.ProxyConfig)) *SettingsTab {
@@ -44,6 +52,8 @@ func NewSettingsTab(parent fyne.Window, onLoaded onConfigLoaded, onProxySave fun
 	}
 
 	st.iniPathLabel = widget.NewLabel("(none selected)")
+	st.proxyFileFoundLabel = widget.NewLabel("")
+	st.proxyFileFoundLabel.Hide()
 
 	st.masterPassword = widget.NewPasswordEntry()
 	st.masterPassword.PlaceHolder = "Enter master password"
@@ -70,6 +80,9 @@ func NewSettingsTab(parent fyne.Window, onLoaded onConfigLoaded, onProxySave fun
 	st.saveProxyBtn = widget.NewButton("Save Proxy Configuration", st.onSaveProxy)
 	st.saveProxyBtn.Disable()
 
+	st.loadProxyBtn = widget.NewButtonWithIcon("Load Proxy Settings", theme.FolderOpenIcon(), st.onLoadProxy)
+	st.loadProxyBtn.Disable()
+
 	return st
 }
 
@@ -88,6 +101,7 @@ func (st *SettingsTab) Build() fyne.CanvasObject {
 
 	proxySection := container.NewVBox(
 		widget.NewLabelWithStyle("Proxy Configuration (optional)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		st.proxyFileFoundLabel,
 		widget.NewLabel("Server:"),
 		st.proxyServer,
 		widget.NewLabel("Port:"),
@@ -108,7 +122,7 @@ func (st *SettingsTab) Build() fyne.CanvasObject {
 		widget.NewSeparator(),
 		st.loadBtn,
 		widget.NewSeparator(),
-		st.saveProxyBtn,
+		container.NewHBox(st.loadProxyBtn, st.saveProxyBtn),
 	)
 }
 
@@ -125,12 +139,77 @@ func (st *SettingsTab) onSelectFile() {
 		st.iniPathLabel.SetText(st.iniPath)
 		st.loadBtn.Enable()
 		st.saveProxyBtn.Enable()
+
+		st.checkProxyFile()
+
 		_ = reader.Close()
 	}, st.parent)
 
 	// Try to set initial directory to data/ folder.
 	dlg.SetFilter(storage.NewExtensionFileFilter([]string{".enc"}))
 	dlg.Show()
+}
+
+func (st *SettingsTab) checkProxyFile() {
+	if st.iniPath == "" {
+		return
+	}
+	username := os.Getenv("USERNAME")
+	if username == "" {
+		return
+	}
+	dir := filepath.Dir(st.iniPath)
+	proxyPath := filepath.Join(dir, "proxy_"+username+".enc")
+
+	if _, err := os.Stat(proxyPath); err == nil {
+		st.proxyFileFoundLabel.SetText(fmt.Sprintf("✓ Proxy file found for %s. Please enter password and Load.", username))
+		st.proxyFileFoundLabel.Show()
+		st.loadProxyBtn.Enable()
+		st.proxyPassword.FocusGained()
+	} else {
+		st.proxyFileFoundLabel.Hide()
+		st.loadProxyBtn.Disable()
+	}
+}
+
+func (st *SettingsTab) onLoadProxy() {
+	username := os.Getenv("USERNAME")
+	if username == "" {
+		return
+	}
+	pwd := st.proxyPassword.Text
+	if pwd == "" {
+		dialog.ShowInformation("Password Required", "Please enter the proxy config password.", st.parent)
+		return
+	}
+
+	dir := filepath.Dir(st.iniPath)
+	proxyPath := filepath.Join(dir, "proxy_"+username+".enc")
+
+	data, err := os.ReadFile(proxyPath)
+	if err != nil {
+		dialog.ShowError(fmt.Errorf("Failed to read proxy file: %w", err), st.parent)
+		return
+	}
+
+	decrypted, err := crypto.Decrypt("proxy-"+pwd, data)
+	if err != nil {
+		dialog.ShowError(fmt.Errorf("Failed to decrypt proxy settings. Wrong password?"), st.parent)
+		return
+	}
+
+	var proxy model.ProxyConfig
+	if err := json.Unmarshal(decrypted, &proxy); err != nil {
+		dialog.ShowError(fmt.Errorf("Failed to parse proxy settings: %w", err), st.parent)
+		return
+	}
+
+	st.proxyServer.SetText(proxy.Server)
+	st.proxyPort.SetText(fmt.Sprintf("%d", proxy.Port))
+	st.proxyUser.SetText(proxy.User)
+	st.proxyPass.SetText(proxy.Password)
+
+	dialog.ShowInformation("Success", "Proxy configuration loaded from file.", st.parent)
 }
 
 func (st *SettingsTab) onLoadConfig() {

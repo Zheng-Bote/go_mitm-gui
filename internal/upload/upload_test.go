@@ -26,8 +26,13 @@ func TestBuildEnvelopeJSON(t *testing.T) {
 	if env.Options.UpdateExistingRecords != "true" {
 		t.Fatalf("expected true, got %q", env.Options.UpdateExistingRecords)
 	}
-	if len(env.Records) != 2 {
-		t.Fatalf("expected 2 records, got %d", len(env.Records))
+	
+	var records []interface{}
+	if err := json.Unmarshal(env.Records, &records); err != nil {
+		t.Fatal(err)
+	}
+	if len(records) != 2 {
+		t.Fatalf("expected 2 records, got %d", len(records))
 	}
 }
 

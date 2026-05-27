@@ -1,6 +1,8 @@
 // Package model defines the core data structures for the mitm-gui application.
 package model
 
+import "encoding/json"
+
 type AppConfig struct {
 	Global GlobalConfig
 	Topics map[string]*TopicConfig
@@ -69,6 +71,7 @@ type KafkaInputConfig struct {
 	SASLMechanism    string `ini:"sasl_mechanism"`
 	AutoOffsetReset  string `ini:"auto_offset_reset"`
 	ConsumerTimeout  int    `ini:"consumer_timeout"`
+	KafkaDebugMode   bool   `ini:"kafka_debug_mode"`
 }
 
 type ProxyConfig struct {
@@ -157,6 +160,6 @@ func DefaultUploadOptions() UploadOptions {
 }
 
 type UploadEnvelope struct {
-	Options UploadOptions `json:"options"`
-	Records []interface{} `json:"records"`
+	Options UploadOptions   `json:"options"`
+	Records json.RawMessage `json:"records"`
 }

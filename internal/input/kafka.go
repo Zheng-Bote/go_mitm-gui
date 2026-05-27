@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -132,6 +133,14 @@ func (s *KafkaSource) Load(path string) (*model.LoadedData, error) {
 	payload, err := json.Marshal(records)
 	if err != nil {
 		return nil, fmt.Errorf("kafka: marshal error: %w", err)
+	}
+
+	// Kafka Debug Mode: Save payload to file.
+	if cfg.KafkaDebugMode {
+		filename := time.Now().Format("2006-01-02") + "_json-upload.json"
+		if err := os.WriteFile(filename, payload, 0644); err == nil {
+			fmt.Printf("Kafka Debug: Saved loaded data to %s\n", filename)
+		}
 	}
 
 	return &model.LoadedData{

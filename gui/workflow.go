@@ -322,41 +322,43 @@ func (wt *WorkflowTab) onLoadData() {
 	wt.progress.SetValue(0.1)
 	wt.statusLabel.SetText("Loading data...")
 
-	source := input.NewDataSource(wt.currentFmt, wt.currentTopicConfig())
-	if source == nil {
-		dialog.ShowError(fmt.Errorf("Format %s is not yet implemented", wt.currentFmt), wt.parent)
-		return
-	}
+	go func() {
+		source := input.NewDataSource(wt.currentFmt, wt.currentTopicConfig())
+		if source == nil {
+			dialog.ShowError(fmt.Errorf("Format %s is not yet implemented", wt.currentFmt), wt.parent)
+			return
+		}
 
-	data, err := source.Load(wt.filePath)
-	if err != nil {
-		wt.log.Error("Data load failed: %v", err)
-		dialog.ShowError(fmt.Errorf("Data load failed: %w", err), wt.parent)
-		wt.setStep("load", false)
-		wt.progress.SetValue(0)
-		wt.statusLabel.SetText("Data load failed.")
-		return
-	}
+		data, err := source.Load(wt.filePath)
+		if err != nil {
+			wt.log.Error("Data load failed: %v", err)
+			dialog.ShowError(fmt.Errorf("Data load failed: %w", err), wt.parent)
+			wt.setStep("load", false)
+			wt.progress.SetValue(0)
+			wt.statusLabel.SetText("Data load failed.")
+			return
+		}
 
-	wt.mu.Lock()
-	wt.currentData = data
-	wt.mu.Unlock()
+		wt.mu.Lock()
+		wt.currentData = data
+		wt.mu.Unlock()
 
-	if err := wt.ctrl.SetData(data); err != nil {
-		wt.log.Error("Controller rejected data: %v", err)
-		return
-	}
+		if err := wt.ctrl.SetData(data); err != nil {
+			wt.log.Error("Controller rejected data: %v", err)
+			return
+		}
 
-	wt.progress.SetValue(0.4)
-	wt.statusLabel.SetText(fmt.Sprintf("Loaded %d rows from %s.", data.RowCount, data.SourcePath))
-	wt.formatSelect.SetSelected("")
+		wt.progress.SetValue(0.4)
+		wt.statusLabel.SetText(fmt.Sprintf("Loaded %d rows from %s.", data.RowCount, data.SourcePath))
+		wt.formatSelect.SetSelected("")
 
-	preview := string(data.JSONPayload)
-	if len(preview) > 500 {
-		preview = preview[:500] + "\n... (truncated)"
-	}
-	wt.appendSummary(fmt.Sprintf("Loaded %d rows. Fields: %v\nPreview:\n%s",
-		data.RowCount, data.Fields, preview))
+		preview := string(data.JSONPayload)
+		if len(preview) > 500 {
+			preview = preview[:500] + "\n... (truncated)"
+		}
+		wt.appendSummary(fmt.Sprintf("Loaded %d rows. Fields: %v\nPreview:\n%s",
+			data.RowCount, data.Fields, preview))
+	}()
 }
 
 func (wt *WorkflowTab) onValidate() {
@@ -380,36 +382,38 @@ func (wt *WorkflowTab) onValidate() {
 	wt.log.Info("Validating %d rows against %q", wt.currentData.RowCount, tc.JSONSchemaPath)
 	wt.audit("VALIDATE", fmt.Sprintf("schema: %s, rows: %d", tc.JSONSchemaPath, wt.currentData.RowCount))
 
-	validator := schema.New()
-	result, err := validator.ValidateLoaded(wt.currentData, tc.JSONSchemaPath)
-	if err != nil {
-		wt.log.Error("Validation failed: %v", err)
-		dialog.ShowError(fmt.Errorf("Validation failed: %w", err), wt.parent)
-		wt.setStep("validate", false)
-		wt.progress.SetValue(0)
-		wt.statusLabel.SetText("Validation failed.")
-		return
-	}
+	go func() {
+		validator := schema.New()
+		result, err := validator.ValidateLoaded(wt.currentData, tc.JSONSchemaPath)
+		if err != nil {
+			wt.log.Error("Validation failed: %v", err)
+			dialog.ShowError(fmt.Errorf("Validation failed: %w", err), wt.parent)
+			wt.setStep("validate", false)
+			wt.progress.SetValue(0)
+			wt.statusLabel.SetText("Validation failed.")
+			return
+		}
 
-	wt.ctrl.SetValidation(result)
+		wt.ctrl.SetValidation(result)
 
-	if result.Valid {
-		wt.progress.SetValue(0.7)
-		wt.statusLabel.SetText("Validation passed.")
-	} else {
-		wt.progress.SetValue(0.5)
-		wt.statusLabel.SetText("Validation found errors.")
-	}
+		if result.Valid {
+			wt.progress.SetValue(0.7)
+			wt.statusLabel.SetText("Validation passed.")
+		} else {
+			wt.progress.SetValue(0.5)
+			wt.statusLabel.SetText("Validation found errors.")
+		}
 
-	summary := fmt.Sprintf("Validation result: %s",
-		map[bool]string{true: "PASSED", false: "FAILED"}[result.Valid])
-	if len(result.Errors) > 0 {
-		summary += "\nErrors:\n  " + strings.Join(result.Errors, "\n  ")
-	}
-	if len(result.Warnings) > 0 {
-		summary += "\nWarnings:\n  " + strings.Join(result.Warnings, "\n  ")
-	}
-	wt.appendSummary(summary)
+		summary := fmt.Sprintf("Validation result: %s",
+			map[bool]string{true: "PASSED", false: "FAILED"}[result.Valid])
+		if len(result.Errors) > 0 {
+			summary += "\nErrors:\n  " + strings.Join(result.Errors, "\n  ")
+		}
+		if len(result.Warnings) > 0 {
+			summary += "\nWarnings:\n  " + strings.Join(result.Warnings, "\n  ")
+		}
+		wt.appendSummary(summary)
+	}()
 }
 
 func (wt *WorkflowTab) onUpload() {
@@ -537,6 +541,14 @@ func (wt *WorkflowTab) setStep(name string, done bool) {
 func (wt *WorkflowTab) appendSummary(text string) {
 	wt.mu.Lock()
 	defer wt.mu.Unlock()
+
+	lines := strings.Split(wt.summary.Text, "\n---\n")
+	if len(lines) > 100 {
+		lines = lines[len(lines)-100:]
+		wt.summary.SetText("(truncated for performance... check audit logs for full details)\n---\n" + strings.Join(lines, "\n---\n") + "\n---\n" + text)
+		return
+	}
+
 	current := wt.summary.Text
 	if current == "" {
 		wt.summary.SetText(text)

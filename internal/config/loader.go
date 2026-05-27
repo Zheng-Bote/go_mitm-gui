@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"gopkg.in/ini.v1"
 
@@ -252,15 +253,28 @@ func parseKafkaInput(cfg *ini.File, topicName string) (*model.KafkaInputConfig, 
 	if err != nil {
 		return nil, err
 	}
+
+	groupID := sec.Key("GROUP_ID").String()
+	prefix := "bmw.cority.connect."
+	if strings.HasPrefix(groupID, prefix) {
+		username := os.Getenv("USERNAME")
+		if username == "" {
+			username = "unknown"
+		}
+		ts := time.Now().Format("200601021504")
+		groupID = fmt.Sprintf("%s%s.%s", groupID, username, ts)
+	}
+
 	return &model.KafkaInputConfig{
 		BootstrapServers: sec.Key("BOOTSTRAP_SERVERS").String(),
 		Topic:            sec.Key("TOPIC").String(),
-		GroupID:          sec.Key("GROUP_ID").String(),
+		GroupID:          groupID,
 		Key:              sec.Key("KEY").String(),
 		Secret:           sec.Key("SECRET").String(),
 		SecurityProtocol: sec.Key("security_protocol").String(),
 		SASLMechanism:    sec.Key("sasl_mechanism").String(),
 		AutoOffsetReset:  sec.Key("auto_offset_reset").String(),
 		ConsumerTimeout:  sec.Key("consumer_timeout").MustInt(30),
+		KafkaDebugMode:   sec.Key("kafka_debug_mode").MustBool(false),
 	}, nil
 }

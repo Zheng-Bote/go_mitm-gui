@@ -155,21 +155,12 @@ func AuthenticatedUpload(
 		}
 	}
 
-	// Build the envelope.
-	var records []interface{}
-	if err := json.Unmarshal(recordsJSON, &records); err != nil {
-		return &model.UploadResult{
-			Success: false,
-			Error:   fmt.Sprintf("Failed to parse records: %v", err),
-		}
-	}
-
 	options := model.DefaultUploadOptions()
 	if opts != nil {
 		options = *opts
 	}
 
-	envelope := model.UploadEnvelope{Options: options, Records: records}
+	envelope := model.UploadEnvelope{Options: options, Records: json.RawMessage(recordsJSON)}
 	payload, err := json.Marshal(envelope)
 	if err != nil {
 		return &model.UploadResult{

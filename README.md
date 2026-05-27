@@ -1,6 +1,6 @@
 # mitm-gui
 
-> **Version 0.1.0** - Windows desktop application for encrypted configuration loading, multi-format data ingestion, JSON Schema validation, and authenticated HTTP upload.
+> **Version 0.2.0** - Windows desktop application for encrypted configuration loading, multi-format data ingestion, JSON Schema validation, and authenticated HTTP upload.
 
 ---
 
@@ -19,10 +19,22 @@ The application reads its configuration from an **AES-256-GCM encrypted INI file
 
 ## Features
 
+### Performance & Efficiency (New in v0.2.0)
+- **Parallel Validation:** Multi-core JSON Schema validation using a worker-pool pattern.
+- **Memory Efficiency:** Optimized upload pipeline using `json.RawMessage` to minimize memory copies.
+- **Non-Blocking UI:** Asynchronous data loading and validation via goroutines for a smooth GUI experience.
+- **GUI Stability:** Automatic log truncation in the summary panel for better performance with large datasets.
+
+### Kafka Enhancements (New in v0.2.0)
+- **Robust Timeout Detection:** Improved detection of Kafka consumer idle states using `errors.Is`.
+- **Kafka Debug Mode:** Optional export of loaded Kafka records to `<yyyy-mm-dd>_json-upload.json`.
+- **Dynamic Consumer Groups:** Automatic `GROUP_ID` generation (bmw.cority.connect.<user>.<timestamp>) for multi-user environments.
+
 ### Encrypted Configuration
 - AES-256-GCM encryption with Argon2id key derivation (time=3, memory=64MB)
 - Encrypted INI file contains all connection parameters (DB, Kafka, schema paths, upload URLs)
 - Separate per-user encrypted proxy configuration
+- Automatic detection and loading of user-specific proxy files (`proxy_<USER>.enc`)
 - Magic-byte file header (`MITM`) for quick format detection
 
 ### Multi-Format Data Loading

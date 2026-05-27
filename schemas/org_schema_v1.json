@@ -1,68 +1,34 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "EmployeeNumber": {
-      "type": "string",
-      "pattern": "^[0-9]{6,8}$"
+  "title": "ORG Data Schema",
+  "description": "Schema for ORG master data records from Kafka",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "ClockInOut": { "type": "string" },
+      "CostCenter": { "type": "string" },
+      "Country": { "type": "string", "minLength": 2, "maxLength": 3 },
+      "Department": { "type": "string" },
+      "DepartmentManager": { "type": "string" },
+      "DepartmentManagerText": { "type": "string" },
+      "DepartmentText": { "type": "string" },
+      "EmployeeGroup": { "type": "string" },
+      "EmployeeID": { "type": "string" },
+      "EmployeeSubGroup": { "type": "string" },
+      "EndDate": { "type": "string", "format": "date" },
+      "EntryDate": { "type": "string" },
+      "ExitDate": { "type": "string" },
+      "FunctionalLevelManager": { "type": "string" },
+      "LegacyID": { "type": "string" },
+      "LegalEntity": { "type": "string" },
+      "Location": { "type": "string" },
+      "ManagerID": { "type": "string" },
+      "PersonnelArea": { "type": "string" },
+      "StartDate": { "type": "string", "format": "date" },
+      "Status": { "type": "string", "enum": ["A", "D", "I", "P"] },
+      "WorkingStructure": { "type": "string" }
     },
-    "SSNValue": {
-      "type": "string"
-    },
-    "FirstName": {
-      "type": "string",
-      "minLength": 2,
-      "maxLength": 255
-    },
-    "LastName": {
-      "type": "string",
-      "minLength": 2,
-      "maxLength": 255
-    },
-    "DateOfBirth": {
-      "type": "string",
-      "pattern": "^\\d{2}\\.\\d{2}\\.\\d{4}$"
-    },
-    "HomeStreet1": {
-      "type": "string"
-    },
-    "HomeCity": {
-      "type": "string"
-    },
-    "HomeZip": {
-      "type": "string"
-    },
-    "HomeCountry": {
-      "type": "string"
-    },
-    "Organization.Code": {
-      "type": "string"
-    },
-    "Department.Code": {
-      "type": "string"
-    },
-    "Supervisor": {
-      "type": "string"
-    },
-    "Email": {
-      "type": "string"
-    },
-    "LoginId": {
-      "type": "string"
-    },
-    "CostCenter": {
-      "type": "string"
-    },
-    "PositionCode": {
-      "type": "string"
-    },
-    "PositionDescription": {
-      "type": "string"
-    }
-  },
-  "required": [
-    "EmployeeNumber",
-    "FirstName",
-    "LastName"
-  ]
+    "required": ["EmployeeID", "StartDate", "EndDate", "Status"]
+  }
 }
