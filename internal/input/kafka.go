@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -47,7 +48,7 @@ func (s *KafkaSource) Load(path string) (*model.LoadedData, error) {
 	// Set consumer timeout (default 30s).
 	idleTimeout := time.Duration(cfg.ConsumerTimeout) * time.Second
 	if idleTimeout <= 0 {
-		idleTimeout = 30 * time.Second
+		idleTimeout = 1 * time.Minute
 	}
 
 	// TLS dialer for Confluent Cloud.
@@ -83,7 +84,7 @@ func (s *KafkaSource) Load(path string) (*model.LoadedData, error) {
 
 		if err != nil {
 			// Idle timeout reached - no more messages.
-			if err == context.DeadlineExceeded {
+			if errors.Is(err, context.DeadlineExceeded) {
 				break
 			}
 			return nil, fmt.Errorf("kafka: read error: %w", err)
