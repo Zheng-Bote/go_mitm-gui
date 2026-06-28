@@ -132,14 +132,14 @@ audit_log_file_path = "C:\audit_logs\<yyyy-mm-dd>_hr_audit.log"
 DEFAULT_FILE_PATH = "C:\input\hr_data.csv"
 
 [HR-AUTH]
-saas_base_url = "https://bmwgroup.demo.cority.com"
-saas_login = "Cority_Integration"
-saas_password = "Cority123$"
+saas_base_url = "https://cnx.demo.cority.com"
+saas_login = "Cority_Test"
+saas_password = "TopSecret23$"
 
 [HR-UPLOAD]
 use_proxy = true
 proxy_host = "proxy.muc:8080"
-upload_url = "https://bmwgroup.demo.cority.com/api/employeeimport"
+upload_url = "https://cnx.demo.cority.net/api/employeimport"
 upload_timeout = 120
 ```
 
